@@ -33,23 +33,27 @@ Provide highly engaging, creative, and structured replies. If the user asks for 
 
     // 1. Try Gemini
     if (process.env.GEMINI_API_KEY) {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-      // Format messages history for Gemini
-      const geminiContents = [
-        { role: 'user', parts: [{ text: systemPrompt }] },
-        ...messages.map((m: any) => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }],
-        })),
-      ];
+        // Format messages history for Gemini
+        const geminiContents = [
+          { role: 'user', parts: [{ text: systemPrompt }] },
+          ...messages.map((m: any) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }],
+          })),
+        ];
 
-      const result = await model.generateContent({
-        contents: geminiContents,
-      });
+        const result = await model.generateContent({
+          contents: geminiContents,
+        });
 
-      return NextResponse.json({ content: result.response.text() });
+        return NextResponse.json({ content: result.response.text() });
+      } catch (geminiError) {
+        console.error('Gemini chatbot query failed, falling back:', geminiError);
+      }
     }
 
     // 2. Try OpenAI
