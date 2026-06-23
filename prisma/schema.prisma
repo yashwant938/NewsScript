@@ -1,0 +1,91 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String          @unique
+  password      String
+  role          String          @default("USER") // USER or ADMIN
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  savedNews     SavedNews[]
+  history       UserHistory[]
+  bookmarked    BookmarkedScript[]
+}
+
+model Article {
+  id               String       @id @default(cuid())
+  title            String
+  description      String?
+  content          String?
+  url              String       @unique
+  urlToImage       String?
+  publishedAt      DateTime
+  sourceName       String
+  sourceUrl        String?
+  category         String       // "overall", "technology", "sports", "business", "entertainment", "science", "world"
+  trendingScore    Float
+  recencyScore     Float
+  credibilityScore Float
+  mentionsScore    Float
+  engagementScore  Float
+  createdAt        DateTime     @default(now())
+  savedBy          SavedNews[]
+  scripts          Script[]
+}
+
+model Script {
+  id          String   @id @default(cuid())
+  articleId   String
+  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId      String?
+  content     String   // JSON structure containing Hook, What Happened, etc.
+  createdAt   DateTime @default(now())
+  bookmarks   BookmarkedScript[]
+}
+
+model SavedNews {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])
+}
+
+model BookmarkedScript {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scriptId  String
+  script    Script   @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, scriptId])
+}
+
+model UserHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // "VIEW_ARTICLE", "GENERATE_SCRIPT", "BOOKMARK_SCRIPT"
+  details   String?  // Context detail
+  createdAt DateTime @default(now())
+}
+
+model ApiUsage {
+  id        String   @id @default(cuid())
+  service   String   // "NEWS_AGGREGATOR", "GEMINI_AI", "OPENAI_AI"
+  status    String   // "SUCCESS", "FAILURE"
+  latencyMs Int
+  createdAt DateTime @default(now())
+}
